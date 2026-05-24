@@ -2096,6 +2096,7 @@ fun ProcessFlowTab(viewModel: MainViewModel) {
             dismissButton = { TextButton(onClick = { showDeleteProductConfirm.value = false }) { Text("取消") } }
         )
     }
+    }
 }
 
 // ========== Tab 4: 智能排工（自动排工，横屏优化，缩放功能） ==========
