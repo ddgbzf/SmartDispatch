@@ -2008,7 +2008,7 @@ fun ProcessFlowTab(viewModel: MainViewModel) {
     Box(modifier = Modifier.fillMaxSize().background(brush = androidx.compose.ui.graphics.Brush.verticalGradient(colors = listOf(Color(0xFFF0FFF4), Color(0xFFE8F5ED))))) {
         if (products.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("暂无产品数据", color = MaterialTheme.colorScheme.outline); Spacer(Modifier.height(8.dp)); Button(onClick = { showAddProductDialog.value = true }) { Text("添加产品") } }
+                Text("暂无产品数据，请在设置中导入", color = MaterialTheme.colorScheme.outline)
             }
         } else {
             Column(modifier = Modifier.fillMaxSize()) {
