@@ -22,11 +22,11 @@ class DispatchRepository(
     val allAssignments: Flow<List<Assignment>> = assignmentDao.getAll()
     val allFixedCells: Flow<List<FixedCell>> = fixedCellDao.getAll()
 
-    suspend fun addPerson(name: String, employeeId: String = "", jobType: String = "") = personDao.insert(Person(name = name, employeeId = employeeId, jobType = jobType, insertOrder = System.currentTimeMillis().toInt()))
+    suspend fun addPerson(name: String, employeeId: String = "") = personDao.insert(Person(name = name, employeeId = employeeId, insertOrder = System.currentTimeMillis().toInt()))
     suspend fun updatePerson(person: Person) = personDao.update(person)
     suspend fun deletePerson(person: Person) = personDao.delete(person)
 
-    suspend fun insertPersonBefore(beforePerson: Person, name: String, employeeId: String = "", jobType: String = "") {
+    suspend fun insertPersonBefore(beforePerson: Person, name: String, employeeId: String = "") {
         // 方案A：物理位置，beforeIndex及之后的全部+1
         val allPersons = personDao.getAllOnce()
         val beforeIndex = allPersons.indexOfFirst { it.id == beforePerson.id }
@@ -40,7 +40,7 @@ class DispatchRepository(
             }
         }
         
-        personDao.insert(Person(name = name, employeeId = employeeId, jobType = jobType, insertOrder = newInsertOrder))
+        personDao.insert(Person(name = name, employeeId = employeeId, insertOrder = newInsertOrder))
     }
 
     suspend fun setSkillScore(personId: Int, processName: String, score: Int, sortOrder: Int? = null) {
@@ -54,6 +54,9 @@ class DispatchRepository(
 
     suspend fun addProduct(name: String, capacity: Int, requiredPeople: Int): Long {
         return productDao.insert(Product(name = name, capacity = capacity, requiredPeople = requiredPeople))
+    }
+    suspend fun insertProductBefore(beforeProduct: Product, name: String, capacity: Int, requiredPeople: Int) {
+        productDao.insert(Product(name = name, capacity = capacity, requiredPeople = requiredPeople))
     }
     suspend fun updateProduct(product: Product) = productDao.update(product)
     suspend fun deleteProduct(product: Product) = productDao.delete(product)

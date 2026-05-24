@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 @Database(
     entities = [Person::class, SkillScore::class, Product::class, ProductProcess::class, Assignment::class, FixedCell::class],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -68,6 +68,17 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // version 13 → 14: 删除 persons 表的 jobType 列
+        private val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // SQLite 不支持直接 DROP COLUMN，需要重建表
+                db.execSQL("CREATE TABLE persons_new (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name TEXT NOT NULL, employeeId TEXT NOT NULL DEFAULT '', onLeave INTEGER NOT NULL DEFAULT 0, insertOrder INTEGER NOT NULL DEFAULT 0)")
+                db.execSQL("INSERT INTO persons_new (id, name, employeeId, onLeave, insertOrder) SELECT id, name, employeeId, onLeave, insertOrder FROM persons")
+                db.execSQL("DROP TABLE persons")
+                db.execSQL("ALTER TABLE persons_new RENAME TO persons")
+            }
+        }
+
         // 预置示例数据的 Callback
         private val prepopulateCallback = object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
@@ -86,12 +97,12 @@ abstract class AppDatabase : RoomDatabase() {
 
                     // 插入6个人员（使用大间隔insertOrder，方便中间插入）
                     val persons = listOf(
-                        Person(name = "张三", employeeId = "001", jobType = "焊工", insertOrder = 100),
-                        Person(name = "李四", employeeId = "002", jobType = "折边工", insertOrder = 200),
-                        Person(name = "王五", employeeId = "003", jobType = "打磨工", insertOrder = 300),
-                        Person(name = "赵六", employeeId = "004", jobType = "组装工", insertOrder = 400),
-                        Person(name = "陈七", employeeId = "005", jobType = "检验员", insertOrder = 500),
-                        Person(name = "刘八", employeeId = "006", jobType = "搬运工", insertOrder = 600)
+                        Person(name = "张三", employeeId = "001", insertOrder = 100),
+                        Person(name = "李四", employeeId = "002", insertOrder = 200),
+                        Person(name = "王五", employeeId = "003", insertOrder = 300),
+                        Person(name = "赵六", employeeId = "004", insertOrder = 400),
+                        Person(name = "陈七", employeeId = "005", insertOrder = 500),
+                        Person(name = "刘八", employeeId = "006", insertOrder = 600)
                     )
                     personDao.insertAll(persons)
 
@@ -170,7 +181,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "smart_dispatch.db"
                 )
-                    .addMigrations(MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
+                    .addMigrations(MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
                     .addCallback(prepopulateCallback)
                     .fallbackToDestructiveMigration()
                     .build()

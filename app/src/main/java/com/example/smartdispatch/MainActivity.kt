@@ -266,7 +266,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addLog(msg: String) { _logs.update { it + msg } }
     fun clearLogs() { _logs.update { emptyList() } }
-    fun addPerson(name: String, employeeId: String = "", jobType: String = "") = viewModelScope.launch { repo.addPerson(name, employeeId, jobType) }
+    fun addPerson(name: String, employeeId: String = "") = viewModelScope.launch { repo.addPerson(name, employeeId) }
     fun toggleLeave(person: Person) = viewModelScope.launch { 
         repo.updatePerson(person.copy(onLeave = !person.onLeave))
     }
@@ -276,12 +276,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
     fun deletePerson(person: Person) = viewModelScope.launch { repo.deletePerson(person) }
 
-    fun updatePersonInfo(person: Person, name: String, employeeId: String, jobType: String) = viewModelScope.launch {
-        repo.updatePerson(person.copy(name = name, employeeId = employeeId, jobType = jobType))
+    fun updatePersonInfo(person: Person, name: String, employeeId: String) = viewModelScope.launch {
+        repo.updatePerson(person.copy(name = name, employeeId = employeeId))
     }
 
-    fun insertPersonBefore(beforePerson: Person, name: String, employeeId: String = "", jobType: String = "") = viewModelScope.launch {
-        repo.insertPersonBefore(beforePerson, name, employeeId, jobType)
+    fun insertPersonBefore(beforePerson: Person, name: String, employeeId: String = "") = viewModelScope.launch {
+        repo.insertPersonBefore(beforePerson, name, employeeId)
     }
     
     // 自动执行排工（当输入框变化时调用）
@@ -350,6 +350,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addProduct(name: String, capacity: Int, requiredPeople: Int) = viewModelScope.launch {
         repo.addProduct(name, capacity, requiredPeople)
+    }
+    fun insertProductBefore(beforeProduct: Product, name: String, capacity: Int, requiredPeople: Int) = viewModelScope.launch {
+        repo.insertProductBefore(beforeProduct, name, capacity, requiredPeople)
     }
     fun updateProduct(product: Product) = viewModelScope.launch { repo.updateProduct(product) }
     fun deleteProduct(product: Product) = viewModelScope.launch { repo.deleteProduct(product) }
@@ -853,41 +856,33 @@ fun HelpScreen(onDismiss: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
             ) {
                 Text("快速上手", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1976D2))
-                Text("1. 点击右上角导入按钮，选择Excel文件导入数据", fontSize = 13.sp)
-                Text("2. 在「智能排工」页输入产品型号，点击排工", fontSize = 13.sp)
-                Text("3. 排工完成后点击导出，保存结果到Excel", fontSize = 13.sp)
+                Text("• 点击右上角导入按钮，选择Excel文件导入数据", fontSize = 13.sp)
+                Text("• Excel需包含「工序评分」和「工序流程」两个工作表", fontSize = 13.sp)
                 Spacer(Modifier.height(16.dp))
 
                 Text("【工序评分】", fontWeight = FontWeight.Bold, color = Color(0xFF1976D2))
                 Text("• 显示所有人员对各工序的技能评分", fontSize = 13.sp)
                 Text("• 点击评分格可直接编辑评分", fontSize = 13.sp)
                 Text("• 长按工序名：编辑/插入/删除工序", fontSize = 13.sp)
-                Text("• 长按人员名：编辑/插入/删除人员（姓名、工号、工种）", fontSize = 13.sp)
+                Text("• 长按人员名：编辑/插入/删除人员", fontSize = 13.sp)
                 Spacer(Modifier.height(12.dp))
 
                 Text("【工序流程】", fontWeight = FontWeight.Bold, color = Color(0xFF1976D2))
                 Text("• 显示所有产品的工序流程（名称、产能、需求人数、工序列表）", fontSize = 13.sp)
-                Text("• 长按产品名称：添加新产品或删除产品", fontSize = 13.sp)
+                Text("• 长按产品名称：插入/删除产品", fontSize = 13.sp)
                 Text("• 工序编辑在设置→编辑工序流程中完成", fontSize = 13.sp)
                 Spacer(Modifier.height(12.dp))
 
                 Text("【智能排工】", fontWeight = FontWeight.Bold, color = Color(0xFF1976D2))
                 Text("• 输入产品型号名称，系统自动匹配", fontSize = 13.sp)
+                Text("• 左侧输入框可输入请假人员", fontSize = 13.sp)
                 Text("• 点击排工按钮，系统根据评分自动分配最优人员", fontSize = 13.sp)
-                Text("• 左侧输入框可标记请假人员（输入姓名后回车）", fontSize = 13.sp)
                 Text("• 底部橙色区域显示未分配人员", fontSize = 13.sp)
                 Text("• 顶部统计栏显示总人数、请假、已分配、欠缺人数", fontSize = 13.sp)
                 Spacer(Modifier.height(12.dp))
 
-                Text("【设置】", fontWeight = FontWeight.Bold, color = Color(0xFF1976D2))
-                Text("• 编辑工序流程：修改产品的产能、人数和工序列表（支持拖动排序）", fontSize = 13.sp)
-                Text("• 固定列：设置后该列人员排工时留任原岗位不变", fontSize = 13.sp)
-                Text("• 字体大小/行高/列宽：自定义排工表格显示效果", fontSize = 13.sp)
-                Spacer(Modifier.height(12.dp))
-
-                Text("【导入/导出】", fontWeight = FontWeight.Bold, color = Color(0xFF1976D2))
-                Text("• 导入：Excel需包含「工序评分」和「工序流程」两个工作表", fontSize = 13.sp)
-                Text("• 导出：排工结果保存为Excel文件，方便打印和存档", fontSize = 13.sp)
+                Text("如需帮助微信:ddg18933639(大胆哥)", fontSize = 13.sp, color = Color(0xFF666666))
+                Text("项目源码:https://github.com/ddgbzf/SmartDispatch", fontSize = 13.sp, color = Color(0xFF666666))
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("知道了") } }
@@ -1579,10 +1574,8 @@ fun SkillScoreTab(viewModel: MainViewModel) {
     var selectedPerson by remember { mutableStateOf<Person?>(null) }
     var personEditName by remember { mutableStateOf("") }
     var personEditEmployeeId by remember { mutableStateOf("") }
-    var personEditJobType by remember { mutableStateOf("") }
     var personInsertName by remember { mutableStateOf("") }
     var personInsertEmployeeId by remember { mutableStateOf("") }
-    var personInsertJobType by remember { mutableStateOf("") }
 
     val scrollState = rememberScrollState()
     val listState = rememberLazyListState()
@@ -1910,14 +1903,12 @@ fun SkillScoreTab(viewModel: MainViewModel) {
                         showPersonMenu.value = false
                         personEditName = selectedPerson!!.name
                         personEditEmployeeId = selectedPerson!!.employeeId
-                        personEditJobType = selectedPerson!!.jobType
                         showPersonEditDialog.value = true
                     }) { Text("编辑人员信息", modifier = Modifier.fillMaxWidth()) }
                     TextButton(modifier = Modifier.fillMaxWidth(), onClick = {
                         showPersonMenu.value = false
                         personInsertName = ""
                         personInsertEmployeeId = ""
-                        personInsertJobType = ""
                         showPersonInsertDialog.value = true
                     }) { Text("在此人员前插入新人员", modifier = Modifier.fillMaxWidth()) }
                     Divider()
@@ -1940,12 +1931,11 @@ fun SkillScoreTab(viewModel: MainViewModel) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(value = personEditName, onValueChange = { personEditName = it }, label = { Text("姓名") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(value = personEditEmployeeId, onValueChange = { personEditEmployeeId = it }, label = { Text("工号") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = personEditJobType, onValueChange = { personEditJobType = it }, label = { Text("工种") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 }
             },
             confirmButton = { TextButton(onClick = {
                 if (personEditName.isNotBlank()) {
-                    viewModel.updatePersonInfo(selectedPerson!!, personEditName.trim(), personEditEmployeeId.trim(), personEditJobType.trim())
+                    viewModel.updatePersonInfo(selectedPerson!!, personEditName.trim(), personEditEmployeeId.trim())
                 }
                 showPersonEditDialog.value = false
             }) { Text("保存") } },
@@ -1962,12 +1952,11 @@ fun SkillScoreTab(viewModel: MainViewModel) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(value = personInsertName, onValueChange = { personInsertName = it }, label = { Text("姓名") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(value = personInsertEmployeeId, onValueChange = { personInsertEmployeeId = it }, label = { Text("工号（可选）") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = personInsertJobType, onValueChange = { personInsertJobType = it }, label = { Text("工种（可选）") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 }
             },
             confirmButton = { TextButton(onClick = {
                 if (personInsertName.isNotBlank()) {
-                    viewModel.insertPersonBefore(selectedPerson!!, personInsertName.trim(), personInsertEmployeeId.trim(), personInsertJobType.trim())
+                    viewModel.insertPersonBefore(selectedPerson!!, personInsertName.trim(), personInsertEmployeeId.trim())
                 }
                 showPersonInsertDialog.value = false
             }) { Text("添加") } },
@@ -1993,10 +1982,12 @@ fun SkillScoreTab(viewModel: MainViewModel) {
 fun ProcessFlowTab(viewModel: MainViewModel) {
     val products by viewModel.allProducts.collectAsState()
     val repo = (LocalContext.current.applicationContext as DispatchApplication).repository
-    val showAddProductDialog = remember { mutableStateOf(false) }
-    val showAddProcessDialog = remember { mutableStateOf(false) }
+    val showInsertProductDialog = remember { mutableStateOf(false) }
     val showDeleteProductConfirm = remember { mutableStateOf(false) }
-    var deletingProduct by remember { mutableStateOf<Product?>(null) }
+    var selectedProduct by remember { mutableStateOf<Product?>(null) }
+    var insertName by remember { mutableStateOf("") }
+    var insertCapacity by remember { mutableStateOf("") }
+    var insertPeople by remember { mutableStateOf("") }
 
     var processMap by remember { mutableStateOf(emptyMap<Int, List<ProductProcess>>()) }
     val processVer by viewModel.processVersion.collectAsState()
@@ -2041,7 +2032,7 @@ fun ProcessFlowTab(viewModel: MainViewModel) {
                         Row(modifier = Modifier.fillMaxWidth()) {
                             Box(modifier = Modifier.width(140.dp).height(24.dp).border(0.5.dp, Color(0xFFE0E0E0)).padding(horizontal = 4.dp).background(rowBg).combinedClickable(
                                 onClick = {},
-                                onLongClick = { deletingProduct = product; showDeleteProductConfirm.value = true }
+                                onLongClick = { selectedProduct = product; showInsertProductDialog.value = true }
                             ), contentAlignment = Alignment.CenterStart) { Text(product.name, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                             Row(modifier = Modifier.weight(1f).horizontalScroll(scrollState).background(rowBg)) {
                                 Box(modifier = Modifier.width(60.dp).height(24.dp).border(0.5.dp, Color(0xFFE0E0E0)), contentAlignment = Alignment.Center) { Text(product.capacity.toString(), fontSize = 12.sp) }
@@ -2058,38 +2049,52 @@ fun ProcessFlowTab(viewModel: MainViewModel) {
                     }
                 }
             }
-        }
-        // 金属质感悬浮按钮（上移，避免被底部导航栏遮挡）
-        Box(
-            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 24.dp, bottom = 80.dp).size(48.dp)
-                .shadow(8.dp, RoundedCornerShape(24.dp), ambientColor = Color(0xFF1565C0).copy(alpha = 0.4f), spotColor = Color(0xFF1565C0).copy(alpha = 0.6f))
-                .background(
-                    brush = androidx.compose.ui.graphics.Brush.linearGradient(
-                        colors = listOf(Color(0xFF42A5F5), Color(0xFF1976D2), Color(0xFF0D47A1))
-                    ),
-                    shape = RoundedCornerShape(24.dp)
-                )
-                .border(1.5.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(24.dp))
-                .clickable { showAddProductDialog.value = true },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(Icons.Default.Add, "添加产品", modifier = Modifier.size(24.dp), tint = Color.White.copy(alpha = 0.95f))
-        }
     }
 
-    if (showAddProductDialog.value) {
-        var name by remember { mutableStateOf("") }
-        var capacity by remember { mutableStateOf("") }
-        var people by remember { mutableStateOf("") }
-        AlertDialog(onDismissRequest = { showAddProductDialog.value = false }, title = { Text("添加产品") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("产品名称") }, singleLine = true, modifier = Modifier.fillMaxWidth()); OutlinedTextField(value = capacity, onValueChange = { if (it.all { c -> c.isDigit() }) capacity = it }, label = { Text("产能") }, singleLine = true, modifier = Modifier.fillMaxWidth()); OutlinedTextField(value = people, onValueChange = { if (it.all { c -> c.isDigit() }) people = it }, label = { Text("需求人数") }, singleLine = true, modifier = Modifier.fillMaxWidth()) } }, confirmButton = { TextButton(onClick = { if (name.isNotBlank()) { viewModel.addProduct(name.trim(), capacity.toIntOrNull() ?: 0, people.toIntOrNull() ?: 0); showAddProductDialog.value = false } }, enabled = name.isNotBlank()) { Text("确定") } }, dismissButton = { TextButton(onClick = { showAddProductDialog.value = false }) { Text("取消") } })
+    // 插入产品对话框（长按产品名称弹出）
+    if (showInsertProductDialog.value && selectedProduct != null) {
+        AlertDialog(
+            onDismissRequest = { showInsertProductDialog.value = false },
+            title = { Text("在「${selectedProduct!!.name}」前插入新产品") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = insertName, onValueChange = { insertName = it }, label = { Text("产品名称") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = insertCapacity, onValueChange = { if (it.all { c -> c.isDigit() }) insertCapacity = it }, label = { Text("产能") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = insertPeople, onValueChange = { if (it.all { c -> c.isDigit() }) insertPeople = it }, label = { Text("需求人数") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (insertName.isNotBlank()) {
+                        viewModel.insertProductBefore(selectedProduct!!, insertName.trim(), insertCapacity.toIntOrNull() ?: 0, insertPeople.toIntOrNull() ?: 0)
+                        showInsertProductDialog.value = false
+                        insertName = ""
+                        insertCapacity = ""
+                        insertPeople = ""
+                    }
+                }, enabled = insertName.isNotBlank()) { Text("插入") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        showInsertProductDialog.value = false
+                        showDeleteProductConfirm.value = true
+                    }) { Text("删除", color = Color(0xFFC62828)) }
+                    TextButton(onClick = { showInsertProductDialog.value = false }) { Text("取消") }
+                }
+            }
+        )
     }
-    if (showAddProcessDialog.value) {
-        var processName by remember { mutableStateOf("") }
-        var selectedProduct by remember { mutableStateOf(products.firstOrNull()?.name ?: "") }
-        AlertDialog(onDismissRequest = { showAddProcessDialog.value = false }, title = { Text("添加工序") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedTextField(value = selectedProduct, onValueChange = { selectedProduct = it }, label = { Text("产品") }, singleLine = true, readOnly = true, modifier = Modifier.fillMaxWidth().clickable { }); OutlinedTextField(value = processName, onValueChange = { processName = it }, label = { Text("工序名称") }, singleLine = true, modifier = Modifier.fillMaxWidth()) } }, confirmButton = { TextButton(onClick = { val p = products.find { it.name == selectedProduct }; if (p != null && processName.isNotBlank()) { viewModel.addProcessToProduct(p.id, processName.trim()); showAddProcessDialog.value = false } }, enabled = processName.isNotBlank()) { Text("确定") } }, dismissButton = { TextButton(onClick = { showAddProcessDialog.value = false }) { Text("取消") } })
-    }
-    if (showDeleteProductConfirm.value && deletingProduct != null) {
-        AlertDialog(onDismissRequest = { showDeleteProductConfirm.value = false }, title = { Text("确认删除") }, text = { Text("确定要删除「${deletingProduct!!.name}」及其所有工序吗？") }, confirmButton = { TextButton(onClick = { viewModel.deleteProduct(deletingProduct!!); showDeleteProductConfirm.value = false }) { Text("删除", color = Color(0xFFC62828)) } }, dismissButton = { TextButton(onClick = { showDeleteProductConfirm.value = false }) { Text("取消") } })
+
+    // 删除确认对话框
+    if (showDeleteProductConfirm.value && selectedProduct != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteProductConfirm.value = false },
+            title = { Text("确认删除") },
+            text = { Text("确定要删除「${selectedProduct!!.name}」及其所有工序吗？") },
+            confirmButton = { TextButton(onClick = { viewModel.deleteProduct(selectedProduct!!); showDeleteProductConfirm.value = false }) { Text("删除", color = Color(0xFFC62828)) } },
+            dismissButton = { TextButton(onClick = { showDeleteProductConfirm.value = false }) { Text("取消") } }
+        )
     }
 }
 
