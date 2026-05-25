@@ -574,19 +574,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val persons = r.allPersons.first()
                     val processNames = r.allProcessNames.first()  // 保持原始顺序（按id排序）
                     
-                    // 表头: 姓名, 工号, 工序1, 工序2, ...
+                    // 表头: 工号, 姓名, 工序1, 工序2, ...
                     val skillHeader = skillSheet.createRow(0)
-                    skillHeader.createCell(0).setCellValue("姓名")
-                    skillHeader.createCell(1).setCellValue("工号")
+                    skillHeader.createCell(0).setCellValue("工号")
+                    skillHeader.createCell(1).setCellValue("姓名")
                     processNames.forEachIndexed { index, name ->
                         skillHeader.createCell(index + 2).setCellValue(name)
                     }
-                    
+
                     // 数据行
                     persons.forEachIndexed { rowIndex, person ->
                         val row = skillSheet.createRow(rowIndex + 1)
-                        row.createCell(0).setCellValue(person.name)
-                        row.createCell(1).setCellValue(person.employeeId)
+                        row.createCell(0).setCellValue(person.employeeId)
+                        row.createCell(1).setCellValue(person.name)
                         val scores = r.getScoresByPerson(person.id)
                         val scoreMap = scores.associate { it.processName to it.score }
                         processNames.forEachIndexed { colIndex, processName ->
@@ -1516,9 +1516,9 @@ fun SkillScoreTab(viewModel: MainViewModel) {
             allProcessNames = names
             // 先显示前20列
             displayProcessNames = names.take(20)
-            // 如果超过20列，延迟1秒后静默加载全部
+            // 如果超过20列，延迟0.3秒后静默加载全部
             if (names.size > 20) {
-                delay(1000)
+                delay(300)
                 displayProcessNames = names
             }
         }

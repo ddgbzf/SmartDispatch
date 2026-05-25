@@ -302,7 +302,8 @@ class DispatchEngine {
         }
         Log.d("DispatchEngine", "工序评分表头: $allHeaders")
 
-        val processStartCol = allHeaders.indexOfFirst { it == "工号" }.let {
+        // 工序从"姓名"列之后开始（工号=0, 姓名=1, 工序从2开始）
+        val processStartCol = allHeaders.indexOfFirst { it == "姓名" }.let {
             if (it >= 0) it + 1 else 2
         }
 
@@ -320,21 +321,21 @@ class DispatchEngine {
 
         for (rowIndex in 1..sheet.lastRowNum) {
             val row = sheet.getRow(rowIndex) ?: continue
-            // 兼容数字和文本格式
-            val nameCell = row.getCell(0)
+            // 读取工号（A列），兼容数字和文本格式
+            val idCell = row.getCell(0)
+            val employeeId = when (idCell?.cellType) {
+                CellType.STRING -> idCell.stringCellValue?.trim() ?: ""
+                CellType.NUMERIC -> idCell.numericCellValue.toLong().toString()
+                else -> ""
+            }
+            // 读取姓名（B列），兼容数字和文本格式
+            val nameCell = row.getCell(1)
             val name = cleanName(when (nameCell?.cellType) {
                 CellType.STRING -> nameCell.stringCellValue
                 CellType.NUMERIC -> nameCell.numericCellValue.toLong().toString()
                 else -> null
             })
             if (name != null) {
-                // 读取工号（B列），兼容数字和文本格式
-                val idCell = row.getCell(1)
-                val employeeId = when (idCell?.cellType) {
-                    CellType.STRING -> idCell.stringCellValue?.trim() ?: ""
-                    CellType.NUMERIC -> idCell.numericCellValue.toLong().toString()
-                    else -> ""
-                }
                 people.add(name)
                 pWithIds.add(Pair(name, employeeId))
                 scores[name] = mutableMapOf()
