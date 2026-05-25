@@ -1507,10 +1507,24 @@ fun SkillScoreTab(viewModel: MainViewModel) {
     val persons by viewModel.allPersons.collectAsState()
     val processVer by viewModel.processVersion.collectAsState()
     // 工序列表缓存，只在 processVersion 变化时更新
-    var processNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    var allProcessNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    var displayProcessNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isLoadingMore by remember { mutableStateOf(false) }
+    
     LaunchedEffect(processVer) {
-        processNames = viewModel.allProcessNames.first()
+        val names = viewModel.allProcessNames.first()
+        allProcessNames = names
+        // 先显示前20列
+        displayProcessNames = names.take(20)
+        // 如果超过20列，延迟1秒后加载全部
+        if (names.size > 20) {
+            isLoadingMore = true
+            delay(1000)
+            displayProcessNames = names
+            isLoadingMore = false
+        }
     }
+    val processNames = displayProcessNames
     val scoreVer by viewModel.scoreVersion.collectAsState()
     val repo = (LocalContext.current.applicationContext as DispatchApplication).repository
 
@@ -1765,6 +1779,16 @@ fun SkillScoreTab(viewModel: MainViewModel) {
                 .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
         ) {
             Icon(Icons.Default.Search, contentDescription = "搜索评分", tint = Color.White, modifier = Modifier.size(24.dp))
+        }
+        
+        // 加载提示
+        if (isLoadingMore) {
+            Text(
+                "加载更多工序...",
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp),
+                color = Color(0xFF666666),
+                fontSize = 12.sp
+            )
         }
     }
 
