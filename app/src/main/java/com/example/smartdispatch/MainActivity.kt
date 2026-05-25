@@ -306,6 +306,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _scoreVersion.update { it + 1 }
     }
 
+    fun setSkillScoreQuiet(personId: Int, processName: String, score: Int) = viewModelScope.launch {
+        repo.setSkillScore(personId, processName, score)
+    }
+
     fun updateProcessName(productId: Int, processId: Int, newName: String) = viewModelScope.launch {
         val existing = repo.getProcessesOnce(productId).find { it.id == processId }
         if (existing != null) {
@@ -1597,7 +1601,7 @@ fun SkillScoreTab(viewModel: MainViewModel) {
     fun saveScore(personId: Int, process: String, value: String) {
         val key = personId to process
         val newScore = value.toIntOrNull() ?: 0
-        viewModel.setSkillScore(personId, process, newScore)
+        viewModel.setSkillScoreQuiet(personId, process, newScore)
         scoreMap = scoreMap.toMutableMap().apply { put(key, newScore) }
         editValues[key] = if (newScore > 0) newScore.toString() else ""
     }
@@ -1745,17 +1749,17 @@ fun SkillScoreTab(viewModel: MainViewModel) {
             }
         }
 
-        // Search button at bottom-right corner
+        // Search button at top-right corner
         IconButton(
             onClick = { showSearchDialog = true },
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .size(48.dp)
-                .shadow(4.dp, RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+                .align(Alignment.TopEnd)
+                .padding(top = 4.dp, end = 4.dp)
+                .size(36.dp)
+                .shadow(4.dp, RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
         ) {
-            Icon(Icons.Default.Search, contentDescription = "搜索评分", tint = Color.White, modifier = Modifier.size(24.dp))
+            Icon(Icons.Default.Search, contentDescription = "搜索评分", tint = Color.White, modifier = Modifier.size(18.dp))
         }
     }
 
