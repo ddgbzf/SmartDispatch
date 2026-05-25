@@ -1505,7 +1505,12 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
 @Composable
 fun SkillScoreTab(viewModel: MainViewModel) {
     val persons by viewModel.allPersons.collectAsState()
-    val processNames by viewModel.allProcessNames.collectAsState()
+    val processVer by viewModel.processVersion.collectAsState()
+    // 工序列表缓存，只在 processVersion 变化时更新
+    var processNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    LaunchedEffect(processVer) {
+        processNames = viewModel.allProcessNames.first()
+    }
     val scoreVer by viewModel.scoreVersion.collectAsState()
     val repo = (LocalContext.current.applicationContext as DispatchApplication).repository
 
@@ -1749,17 +1754,17 @@ fun SkillScoreTab(viewModel: MainViewModel) {
             }
         }
 
-        // Search button at top-right corner
+        // Search button at bottom-right corner
         IconButton(
             onClick = { showSearchDialog = true },
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 4.dp, end = 4.dp)
-                .size(36.dp)
-                .shadow(4.dp, RoundedCornerShape(10.dp))
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
+                .align(Alignment.BottomEnd)
+                .padding(end = 4.dp, bottom = 80.dp)
+                .size(48.dp)
+                .shadow(4.dp, RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
         ) {
-            Icon(Icons.Default.Search, contentDescription = "搜索评分", tint = Color.White, modifier = Modifier.size(18.dp))
+            Icon(Icons.Default.Search, contentDescription = "搜索评分", tint = Color.White, modifier = Modifier.size(24.dp))
         }
     }
 
