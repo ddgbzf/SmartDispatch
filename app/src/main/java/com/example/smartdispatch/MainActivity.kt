@@ -1506,21 +1506,17 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
 fun SkillScoreTab(viewModel: MainViewModel) {
     val persons by viewModel.allPersons.collectAsState()
     val processVer by viewModel.processVersion.collectAsState()
-    // 工序列表缓存
-    var allProcessNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    // 工序列表缓存，只在 processVersion 变化时更新
     var displayProcessNames by remember { mutableStateOf<List<String>>(emptyList()) }
     
-    // 首次加载和工序变化时都触发
-    LaunchedEffect(Unit) {
-        viewModel.allProcessNames.collect { names ->
-            allProcessNames = names
-            // 先显示前20列
-            displayProcessNames = names.take(20)
-            // 如果超过20列，延迟0.3秒后静默加载全部
-            if (names.size > 20) {
-                delay(300)
-                displayProcessNames = names
-            }
+    LaunchedEffect(processVer) {
+        val names = viewModel.allProcessNames.first()
+        // 先显示前20列
+        displayProcessNames = names.take(20)
+        // 如果超过20列，延迟0.3秒后静默加载全部
+        if (names.size > 20) {
+            delay(300)
+            displayProcessNames = names
         }
     }
     val processNames = displayProcessNames
