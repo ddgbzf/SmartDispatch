@@ -48,7 +48,9 @@ class DispatchRepository(
         if (existing != null) {
             skillScoreDao.update(existing.copy(score = score, sortOrder = sortOrder ?: existing.sortOrder))
         } else {
-            skillScoreDao.insert(SkillScore(personId = personId, processName = processName, score = score, sortOrder = sortOrder ?: 0))
+            // 新记录：使用该工序已有的sortOrder，避免影响排序
+            val order = sortOrder ?: skillScoreDao.getMinSortOrder(processName) ?: 0
+            skillScoreDao.insert(SkillScore(personId = personId, processName = processName, score = score, sortOrder = order))
         }
     }
 

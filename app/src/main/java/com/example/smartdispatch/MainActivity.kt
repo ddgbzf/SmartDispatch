@@ -1506,7 +1506,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
 fun SkillScoreTab(viewModel: MainViewModel) {
     val persons by viewModel.allPersons.collectAsState()
     val processVer by viewModel.processVersion.collectAsState()
-    // 工序列表缓存，只在 processVersion 变化时更新
+    // 工序列表缓存，只在 processVersion 变化时更新（编辑评分不会触发）
     var displayProcessNames by remember { mutableStateOf<List<String>>(emptyList()) }
     
     LaunchedEffect(processVer) {
