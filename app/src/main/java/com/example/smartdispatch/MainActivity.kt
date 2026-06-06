@@ -37,6 +37,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -1322,13 +1323,15 @@ private fun CompactHeaderButton(
     icon: ImageVector,
     contentDescription: String,
     tint: Color = LocalContentColor.current,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .width(28.dp)
             .height(24.dp)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .then(modifier),
         contentAlignment = Alignment.Center
     ) {
         Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(16.dp), tint = tint)
@@ -1377,7 +1380,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                     }
                     Spacer(Modifier.weight(1f))
                     CompactHeaderButton(Icons.Default.FileDownload, "导入") { filePicker.launch(arrayOf("*/*")) }
-                    CompactHeaderButton(Icons.Default.FileUpload, "导出") { exportPicker.launch("排工结果_${System.currentTimeMillis()}.xlsx") }
+                    CompactHeaderButton(Icons.Default.FileDownload, "导出", modifier = Modifier.graphicsLayer { rotationZ = 180f }) { exportPicker.launch("排工结果_${System.currentTimeMillis()}.xlsx") }
                     if (!BuildConfig.DEBUG) {
                         CompactHeaderButton(Icons.Default.PlayArrow, "排工", tint = Color(0xFF1976D2)) {
                             focusManager.clearFocus()
@@ -1394,7 +1397,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                 ) {
                     Text("智能排工系统", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f).padding(start = 8.dp))
                     IconButton(onClick = { filePicker.launch(arrayOf("*/*")) }) { Icon(Icons.Default.FileDownload, "导入", modifier = Modifier.size(20.dp)) }
-                    IconButton(onClick = { exportPicker.launch("排工结果_${System.currentTimeMillis()}.xlsx") }) { Icon(Icons.Default.FileUpload, "导出", modifier = Modifier.size(20.dp)) }
+                    IconButton(onClick = { exportPicker.launch("排工结果_${System.currentTimeMillis()}.xlsx") }) { Icon(Icons.Default.FileDownload, "导出", modifier = Modifier.size(20.dp).graphicsLayer { rotationZ = 180f }) }
                     if (!BuildConfig.DEBUG) {
                         IconButton(onClick = { focusManager.clearFocus(); viewModel.autoDispatch() }) { 
                             Icon(Icons.Default.PlayArrow, "排工", modifier = Modifier.size(20.dp), tint = Color(0xFF1976D2))
@@ -1768,12 +1771,12 @@ fun SkillScoreTab(viewModel: MainViewModel) {
             onClick = { showSearchDialog = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 30.dp, bottom = 80.dp)
-                .size(40.dp)
-                .shadow(4.dp, RoundedCornerShape(10.dp))
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
+                .padding(end = 40.dp, bottom = 80.dp)
+                .size(36.dp)
+                .shadow(3.dp, RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
         ) {
-            Icon(Icons.Default.Search, contentDescription = "搜索评分", tint = Color.White, modifier = Modifier.size(18.dp))
+            Icon(Icons.Default.Search, contentDescription = "搜索评分", tint = Color.White, modifier = Modifier.size(16.dp))
         }
     }
 
