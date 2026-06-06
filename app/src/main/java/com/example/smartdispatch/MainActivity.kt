@@ -1376,8 +1376,8 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                         Text(if (r.remainingCount >= 0) "余${r.remainingCount}" else "缺${-r.remainingCount}", fontSize = 10.sp, lineHeight = 10.sp, fontWeight = FontWeight.Bold, color = if (r.remainingCount >= 0) Color(0xFF2E7D32) else Color(0xFFC62828))
                     }
                     Spacer(Modifier.weight(1f))
-                    CompactHeaderButton(Icons.Default.FileUpload, "导入") { filePicker.launch(arrayOf("*/*")) }
-                    CompactHeaderButton(Icons.Default.FileDownload, "导出") { exportPicker.launch("排工结果_${System.currentTimeMillis()}.xlsx") }
+                    CompactHeaderButton(Icons.Default.FileDownload, "导入") { filePicker.launch(arrayOf("*/*")) }
+                    CompactHeaderButton(Icons.Default.FileUpload, "导出") { exportPicker.launch("排工结果_${System.currentTimeMillis()}.xlsx") }
                     if (!BuildConfig.DEBUG) {
                         CompactHeaderButton(Icons.Default.PlayArrow, "排工", tint = Color(0xFF1976D2)) {
                             focusManager.clearFocus()
@@ -1393,8 +1393,8 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("智能排工系统", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.weight(1f).padding(start = 8.dp))
-                    IconButton(onClick = { filePicker.launch(arrayOf("*/*")) }) { Icon(Icons.Default.FileUpload, "导入", modifier = Modifier.size(20.dp)) }
-                    IconButton(onClick = { exportPicker.launch("排工结果_${System.currentTimeMillis()}.xlsx") }) { Icon(Icons.Default.FileDownload, "导出", modifier = Modifier.size(20.dp)) }
+                    IconButton(onClick = { filePicker.launch(arrayOf("*/*")) }) { Icon(Icons.Default.FileDownload, "导入", modifier = Modifier.size(20.dp)) }
+                    IconButton(onClick = { exportPicker.launch("排工结果_${System.currentTimeMillis()}.xlsx") }) { Icon(Icons.Default.FileUpload, "导出", modifier = Modifier.size(20.dp)) }
                     if (!BuildConfig.DEBUG) {
                         IconButton(onClick = { focusManager.clearFocus(); viewModel.autoDispatch() }) { 
                             Icon(Icons.Default.PlayArrow, "排工", modifier = Modifier.size(20.dp), tint = Color(0xFF1976D2))
@@ -1768,12 +1768,12 @@ fun SkillScoreTab(viewModel: MainViewModel) {
             onClick = { showSearchDialog = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 4.dp, bottom = 80.dp)
-                .size(48.dp)
-                .shadow(4.dp, RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+                .padding(end = 30.dp, bottom = 80.dp)
+                .size(40.dp)
+                .shadow(4.dp, RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
         ) {
-            Icon(Icons.Default.Search, contentDescription = "搜索评分", tint = Color.White, modifier = Modifier.size(24.dp))
+            Icon(Icons.Default.Search, contentDescription = "搜索评分", tint = Color.White, modifier = Modifier.size(18.dp))
         }
     }
 
