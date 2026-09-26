@@ -44,6 +44,20 @@ android {
             )
         }
     }
+
+    flavorDimensions += "team"
+    productFlavors {
+        create("banzu1") {
+            dimension = "team"
+            applicationIdSuffix = ".bz1"
+            versionNameSuffix = "-一班"
+        }
+        create("banzu2") {
+            dimension = "team"
+            applicationIdSuffix = ".bz2"
+            versionNameSuffix = "-二班"
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 白色日程表外框，中间用 evenOdd 挖出十字网格，透出背景色 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M34,30 h40 a4,4 0 0 1 4,4 v40 a4,4 0 0 1 -4,4 h-40 a4,4 0 0 1 -4,-4 v-40 a4,4 0 0 1 4,-4 z
+            M51,34 h2 v40 h-2 z
+            M34,51 h40 v2 h-40 z" />
+</vector>
