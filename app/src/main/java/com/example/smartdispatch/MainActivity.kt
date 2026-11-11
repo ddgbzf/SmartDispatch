@@ -1567,10 +1567,13 @@ fun SkillScoreTab(viewModel: MainViewModel) {
         return
     }
 
-    var scoreMap by remember { mutableStateOf<Map<Pair<Int, String>, Int>>(emptyMap()) }
+    // 用 SnapshotStateMap 代替整表替换的 Map：写某个 key 只会让对应单元格重组，
+    // 避免人数多时每次保存分数导致全表（上千个单元格）重组造成卡顿和内存溢出
+    val scoreMap = remember { mutableStateMapOf<Pair<Int, String>, Int>() }
     LaunchedEffect(scoreVer) {
-        val allScores = repo.getAllScoresOnce()
-        scoreMap = allScores.associate { (it.personId to it.processName) to it.score }
+        val newMap = repo.getAllScoresOnce().associate { (it.personId to it.processName) to it.score }
+        scoreMap.clear()
+        scoreMap.putAll(newMap)
     }
 
     val showEditDialog = remember { mutableStateOf(false) }
@@ -1619,7 +1622,8 @@ fun SkillScoreTab(viewModel: MainViewModel) {
         val key = personId to process
         val newScore = value.toIntOrNull() ?: 0
         viewModel.setSkillScoreQuiet(personId, process, newScore)
-        scoreMap = scoreMap.toMutableMap().apply { put(key, newScore) }
+        // 只更新这一个 key，对应单元格单独重组，不触发全表刷新
+        scoreMap[key] = newScore
         editValues[key] = if (newScore > 0) newScore.toString() else ""
     }
 
@@ -1701,10 +1705,12 @@ fun SkillScoreTab(viewModel: MainViewModel) {
                         ), contentAlignment = Alignment.Center) { Text(person.name, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                         Row(modifier = Modifier.weight(1f).horizontalScroll(scrollState)) {
                             processNames.forEach { process ->
-                                val score = scoreMap[Pair(person.id, process)] ?: 0
                                 val cellKey = person.id to process
-                                val isEditing = editingCell == cellKey
-                                val isHighlighted = highlightedCell == cellKey
+                                // derivedStateOf：只有该格子的编辑/高亮状态真正变化时才重组这一格，
+                                // 而不是每次焦点切换都重算全表
+                                val isEditing by remember(cellKey) { derivedStateOf { editingCell == cellKey } }
+                                val isHighlighted by remember(cellKey) { derivedStateOf { highlightedCell == cellKey } }
+                                val score = scoreMap[cellKey] ?: 0
                                 val bgColor = when {
                                     isHighlighted -> Color(0xFFFFF59D)
                                     score >= 7 -> Color(0xFFE8F5E9)
