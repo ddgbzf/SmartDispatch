@@ -1648,17 +1648,30 @@ fun SkillScoreTab(viewModel: MainViewModel) {
                 val key = person.id to process
                 val score = scoreMap[key] ?: 0
                 editValues[key] = if (score > 0) score.toString() else ""
-                editingCell = key
-                highlightedCell = key
+                // 不调用 clearFocus：避免触发全表 onFocusChanged → 60 人时 1000+ 格并发写 scoreMap 导致快照系统崩溃
                 showSearchDialog = false
                 searchMessage = ""
-                focusManager.clearFocus(force = true)
                 coroutineScope.launch {
+                    // 先滚到目标行，等 LazyColumn 停稳后再滚水平列
                     listState.animateScrollToItem(personIndex)
-                    delay(50) // wait for list scroll to start
-                    val targetScrollX = (processIndex * cellWidthPx).toInt()
-                    val maxScroll = scrollState.maxValue
-                    scrollState.animateScrollTo(targetScrollX.coerceIn(0, maxScroll))
+                    // snapshot：等横向 ScrollState layout 完成再取 maxValue，避免 maxValue=0 导致 coerceIn 把位置压到 0
+                    androidx.compose.runtime.snapshotFlow { scrollState.maxValue }.collect { maxVal ->
+                        if (maxVal > 0) {
+                            val targetScrollX = (processIndex * cellWidthPx).toInt()
+                            scrollState.animateScrollTo(targetScrollX.coerceIn(0, maxVal))
+                            // 滚动到位后再高亮/选中，确保此时目标行已进入 LazyColumn 可见区
+                            highlightedCell = key
+                            // 只在目标格真的在 LazyColumn 可见范围内时才进入编辑态
+                            val layoutInfo = listState.layoutInfo
+                            val visibleRange = layoutInfo.visibleItemsInfo
+                                .map { it.index to it.key }
+                                .associate { it }
+                            if (visibleRange.containsKey(personIndex)) {
+                                editingCell = key
+                            }
+                            return@collect
+                        }
+                    }
                 }
             }
         }
@@ -2011,10 +2024,22 @@ fun ProcessFlowTab(viewModel: MainViewModel) {
     val repo = (LocalContext.current.applicationContext as DispatchApplication).repository
     val showInsertProductDialog = remember { mutableStateOf(false) }
     val showDeleteProductConfirm = remember { mutableStateOf(false) }
+    val showEditProductDialog = remember { mutableStateOf(false) }
+    val showProductMenu = remember { mutableStateOf(false) }
     var selectedProduct by remember { mutableStateOf<Product?>(null) }
     var insertName by remember { mutableStateOf("") }
     var insertCapacity by remember { mutableStateOf("") }
     var insertPeople by remember { mutableStateOf("") }
+    var editName by remember { mutableStateOf("") }
+    var editCapacity by remember { mutableStateOf("") }
+    var editPeople by remember { mutableStateOf("") }
+
+    // 搜索状态
+    var showSearchDialog by remember { mutableStateOf(false) }
+    var searchProductText by remember { mutableStateOf("") }
+    var searchMessage by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
     var processMap by remember { mutableStateOf(emptyMap<Int, List<ProductProcess>>()) }
     val processVer by viewModel.processVersion.collectAsState()
@@ -2052,14 +2077,14 @@ fun ProcessFlowTab(viewModel: MainViewModel) {
                 }
                 Divider()
                 // 数据行：型号名称列固定，其余列随水平滚动
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
                     items(products, key = { it.id }) { product ->
                         val processes = processMap[product.id] ?: emptyList()
                         val rowBg = if (product.isFixed) Color(0xFFFFF9C4) else Color.Transparent
                         Row(modifier = Modifier.fillMaxWidth()) {
                             Box(modifier = Modifier.width(140.dp).height(24.dp).border(0.5.dp, Color(0xFFE0E0E0)).padding(horizontal = 4.dp).background(rowBg).combinedClickable(
                                 onClick = {},
-                                onLongClick = { selectedProduct = product; showInsertProductDialog.value = true }
+                                onLongClick = { selectedProduct = product; showProductMenu.value = true }
                             ), contentAlignment = Alignment.CenterStart) { Text(product.name, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                             Row(modifier = Modifier.weight(1f).horizontalScroll(scrollState).background(rowBg)) {
                                 Box(modifier = Modifier.width(60.dp).height(24.dp).border(0.5.dp, Color(0xFFE0E0E0)), contentAlignment = Alignment.Center) { Text(product.capacity.toString(), fontSize = 12.sp) }
@@ -2076,9 +2101,125 @@ fun ProcessFlowTab(viewModel: MainViewModel) {
                     }
                 }
             }
+        }
+
+        // 搜索按钮（右下角悬浮）
+        IconButton(
+            onClick = { showSearchDialog = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 40.dp, bottom = 80.dp)
+                .size(36.dp)
+                .shadow(3.dp, RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+        ) {
+            Icon(Icons.Default.Search, contentDescription = "搜索产品", tint = Color.White, modifier = Modifier.size(16.dp))
+        }
     }
 
-    // 插入产品对话框（长按产品名称弹出）
+    // 搜索定位函数
+    fun locateProduct() {
+        val query = searchProductText.trim()
+        val index = products.indexOfFirst { it.name.contains(query, ignoreCase = true) }
+        when {
+            query.isBlank() -> searchMessage = "请输入产品名称"
+            index < 0 -> searchMessage = "未找到产品：$query"
+            else -> {
+                searchMessage = ""
+                showSearchDialog = false
+                coroutineScope.launch {
+                    listState.animateScrollToItem(index)
+                }
+            }
+        }
+    }
+
+    // 搜索对话框
+    if (showSearchDialog) {
+        AlertDialog(
+            onDismissRequest = { showSearchDialog = false },
+            title = { Text("定位产品") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = searchProductText,
+                        onValueChange = { searchProductText = it; searchMessage = "" },
+                        label = { Text("产品名称") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (searchMessage.isNotBlank()) {
+                        Text(searchMessage, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { locateProduct() }) { Text("定位") } },
+            dismissButton = { TextButton(onClick = { showSearchDialog = false }) { Text("取消") } }
+        )
+    }
+
+    // 长按产品弹出菜单
+    if (showProductMenu.value && selectedProduct != null) {
+        AlertDialog(
+            onDismissRequest = { showProductMenu.value = false },
+            title = { Text(selectedProduct!!.name) },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    TextButton(modifier = Modifier.fillMaxWidth(), onClick = {
+                        showProductMenu.value = false
+                        editName = selectedProduct!!.name
+                        editCapacity = selectedProduct!!.capacity.toString()
+                        editPeople = selectedProduct!!.requiredPeople.toString()
+                        showEditProductDialog.value = true
+                    }) { Text("编辑产品信息", modifier = Modifier.fillMaxWidth()) }
+                    TextButton(modifier = Modifier.fillMaxWidth(), onClick = {
+                        showProductMenu.value = false
+                        insertName = ""
+                        insertCapacity = ""
+                        insertPeople = ""
+                        showInsertProductDialog.value = true
+                    }) { Text("在此产品前插入新产品", modifier = Modifier.fillMaxWidth()) }
+                    Divider()
+                    TextButton(modifier = Modifier.fillMaxWidth(), onClick = {
+                        showProductMenu.value = false
+                        showDeleteProductConfirm.value = true
+                    }) { Text("删除产品", modifier = Modifier.fillMaxWidth(), color = Color(0xFFC62828)) }
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+    // 编辑产品对话框
+    if (showEditProductDialog.value && selectedProduct != null) {
+        AlertDialog(
+            onDismissRequest = { showEditProductDialog.value = false },
+            title = { Text("编辑产品信息") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = editName, onValueChange = { editName = it }, label = { Text("产品名称") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = editCapacity, onValueChange = { if (it.all { c -> c.isDigit() }) editCapacity = it }, label = { Text("产能") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = editPeople, onValueChange = { if (it.all { c -> c.isDigit() }) editPeople = it }, label = { Text("需求人数") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (editName.isNotBlank()) {
+                        val updated = selectedProduct!!.copy(
+                            name = editName.trim(),
+                            capacity = editCapacity.toIntOrNull() ?: 0,
+                            requiredPeople = editPeople.toIntOrNull() ?: 0
+                        )
+                        viewModel.updateProduct(updated)
+                    }
+                    showEditProductDialog.value = false
+                }) { Text("保存") }
+            },
+            dismissButton = { TextButton(onClick = { showEditProductDialog.value = false }) { Text("取消") } }
+        )
+    }
+
+    // 插入产品对话框
     if (showInsertProductDialog.value && selectedProduct != null) {
         AlertDialog(
             onDismissRequest = { showInsertProductDialog.value = false },
@@ -2095,21 +2236,11 @@ fun ProcessFlowTab(viewModel: MainViewModel) {
                     if (insertName.isNotBlank()) {
                         viewModel.insertProductBefore(selectedProduct!!, insertName.trim(), insertCapacity.toIntOrNull() ?: 0, insertPeople.toIntOrNull() ?: 0)
                         showInsertProductDialog.value = false
-                        insertName = ""
-                        insertCapacity = ""
-                        insertPeople = ""
+                        insertName = ""; insertCapacity = ""; insertPeople = ""
                     }
                 }, enabled = insertName.isNotBlank()) { Text("插入") }
             },
-            dismissButton = {
-                Row {
-                    TextButton(onClick = {
-                        showInsertProductDialog.value = false
-                        showDeleteProductConfirm.value = true
-                    }) { Text("删除", color = Color(0xFFC62828)) }
-                    TextButton(onClick = { showInsertProductDialog.value = false }) { Text("取消") }
-                }
-            }
+            dismissButton = { TextButton(onClick = { showInsertProductDialog.value = false }) { Text("取消") } }
         )
     }
 
@@ -2122,7 +2253,6 @@ fun ProcessFlowTab(viewModel: MainViewModel) {
             confirmButton = { TextButton(onClick = { viewModel.deleteProduct(selectedProduct!!); showDeleteProductConfirm.value = false }) { Text("删除", color = Color(0xFFC62828)) } },
             dismissButton = { TextButton(onClick = { showDeleteProductConfirm.value = false }) { Text("取消") } }
         )
-    }
     }
 }
 
